@@ -1,3 +1,5 @@
 preview_tools/__pycache__/
 linkedin_screenshots_3x/
 *.log
+linkedin_screenshots_3x_clinical/
+qa_*/

@@ -1,0 +1,7 @@
+# Demo and screenshot instructions
+
+- Use only fictional or explicitly anonymized demonstration records for public screenshots. Never copy real hospital patient data into fixtures or captures.
+- Before changing or publishing any clinical screenshot, verify each visible clinical term, code, unit, measurement, timeline, and workflow against an authoritative primary source appropriate to the claim. Use official clinical terminology and product documentation for codes and medicines, and official health-system or professional guidance for procedure timing and safety checks. Record the links and assumptions in `preview_tools/README.md`.
+- Check the whole case for consistency: consent and sign-in before the procedure, time-out before incision, closure before leaving the room, plausible procedure duration, medication timestamps in the correct phase, measured NIBP at intermittent intervals, and inventory usage matching stock. A trend of heart rate is not an ECG waveform; do not label it as one.
+- Keep the repository SQL dump unchanged. Put reproducible presentation fixes in `preview_tools/` and apply them only to the isolated localhost demo database. Label generated data as synthetic; do not claim clinical validation or patient-specific dose suitability.
+- Run `preview_tools/capture_linkedin.py`, review every rendered PNG for overlaps and contradictions, and only then update the published screenshots. See `preview_tools/README.md` for setup and source references.

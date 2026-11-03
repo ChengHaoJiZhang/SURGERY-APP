@@ -40,7 +40,7 @@ $checklist = json_decode($surgery['safety_checklist_data'] ?? '{}', true);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root { --hospital-green: #11998e; --danger-red: #dc3545; }
-        .timestamp-btn { height: 70px; font-weight: 700; border-radius: 8px; font-size: 0.9rem; }
+        .timestamp-btn { height: 80px; font-weight: 700; border-radius: 8px; font-size: 0.9rem; }
         .timestamp-btn.active { background-color: var(--hospital-green); color: white; border-color: var(--hospital-green); }
         .navbar { background-color: var(--hospital-green); }
         .live-pulse { animation: pulse 1.5s infinite; }
@@ -153,7 +153,7 @@ $checklist = json_decode($surgery['safety_checklist_data'] ?? '{}', true);
                     <div class="border rounded p-0 overflow-hidden bg-white" style="height: 300px; overflow-y: auto;">
                         <table class="table table-sm table-striped mb-0 text-center">
                             <thead class="table-light sticky-top">
-                                <tr><th>Time</th><th>HR</th><th>BP</th><th>SpO2</th></tr>
+                                <tr><th>Time</th><th>HR (bpm)</th><th>NIBP (mmHg)</th><th>SpO2 (%)</th></tr>
                             </thead>
                             <tbody id="vitalsTableBody">
                             </tbody>
@@ -224,10 +224,10 @@ $checklist = json_decode($surgery['safety_checklist_data'] ?? '{}', true);
         
         if(data.logs && data.logs.length > 0) {
             data.logs.forEach(row => {
-                // Assuming tidal_CO2 stores SpO2 from the nurse pre-op submission logic
-                const spo2Display = row.tidal_CO2 ? row.tidal_CO2 : '--'; 
-                const time = new Date(row.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                tbody.innerHTML += `<tr><td>${time}</td><td>${row.card_freq ?? '--'}</td><td>${row.sys ?? '--'}/${row.dias ?? '--'}</td><td>${spo2Display}</td></tr>`;
+                const spo2Display = row.oxygen_saturation ?? '--';
+                const bpDisplay = row.sys !== null && row.dias !== null ? `${row.sys}/${row.dias}` : '--';
+                const time = new Date(row.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+                tbody.innerHTML += `<tr><td>${time}</td><td>${row.card_freq ?? '--'}</td><td>${bpDisplay}</td><td>${spo2Display}</td></tr>`;
             });
         } else { 
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted small py-3">No monitoring entries recorded yet.</td></tr>';
@@ -243,7 +243,7 @@ $checklist = json_decode($surgery['safety_checklist_data'] ?? '{}', true);
 
         if (data.success && data.history.length > 0) {
             data.history.forEach(row => {
-                const time = new Date(row.prescribed_datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const time = new Date(row.prescribed_datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
                 tbody.innerHTML += `
                     <tr>
                         <td>${time}</td>

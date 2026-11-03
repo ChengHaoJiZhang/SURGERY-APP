@@ -43,9 +43,12 @@ try {
         
         // A. OBTENER VITALES GUARDADOS (Para verificar si ya se hicieron)
         if ($action === 'get_vitals') {
-            $stmt = $pdo->prepare("SELECT * FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? ORDER BY timestamp DESC");
+            $stmt = $pdo->prepare("SELECT * FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? ORDER BY timestamp DESC, monitoring_id DESC");
             $stmt->execute([$spid]);
-            $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $logs = array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC), static function (array $row): bool {
+                return $row['card_freq'] !== null || $row['sys'] !== null
+                    || ($row['oxygen_saturation'] ?? null) !== null;
+            }));
             echo json_encode(['success' => true, 'logs' => $logs]);
             exit;
         }
@@ -59,12 +62,12 @@ try {
             $hr = $input['hr'] ?? null;
             $sys = $input['sys'] ?? null;
             $dias = $input['dias'] ?? null;
-            $spo2 = $input['tidal_CO2'] ?? null; // Usamos tidal_CO2 para SpO2 en monitorización
+            $spo2 = $input['oxygen_saturation'] ?? null;
             $rr = $input['resp_freq'] ?? null;
             $obs = $input['observations'] ?? 'Nurse Pre-Op Check';
 
             $sql = "INSERT INTO SURGERY_MONITORING 
-                    (surgical_procedure_id, card_freq, sys, dias, tidal_CO2, resp_freq, observations, timestamp) 
+                    (surgical_procedure_id, card_freq, sys, dias, oxygen_saturation, resp_freq, observations, timestamp)
                     VALUES (:spid, :hr, :sys, :dias, :spo2, :rr, :obs, NOW())";
             
             $stmt = $pdo->prepare($sql);

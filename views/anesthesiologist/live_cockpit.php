@@ -137,9 +137,9 @@ if (!$surgery) die("Surgery not found");
         <div class="col-lg-3">
             <div class="monitor-card p-3 mb-3 text-center shadow">
                 <div class="row">
-                    <div class="col-4 border-end border-secondary"><small class="text-secondary fw-bold">HR</small><div class="monitor-val text-hr" id="disp_hr">--</div></div>
-                    <div class="col-4 border-end border-secondary"><small class="text-secondary fw-bold">NIBP</small><div class="monitor-val text-bp" style="font-size: 1.8rem; line-height: 2.5rem;" id="disp_bp">--/--</div></div>
-                    <div class="col-4"><small class="text-secondary fw-bold">SpO2</small><div class="monitor-val text-spo2" id="disp_spo2">--</div></div>
+                    <div class="col-4 border-end border-secondary"><small class="text-secondary fw-bold">HR (bpm)</small><div class="monitor-val text-hr" id="disp_hr">--</div></div>
+                    <div class="col-4 border-end border-secondary"><small class="text-secondary fw-bold">NIBP (mmHg)</small><div class="monitor-val text-bp" style="font-size: 1.8rem; line-height: 2.5rem;" id="disp_bp">--/--</div></div>
+                    <div class="col-4"><small class="text-secondary fw-bold">SpO2 (%)</small><div class="monitor-val text-spo2" id="disp_spo2">--</div></div>
                 </div>
             </div>
             <div class="card p-3 shadow-sm mb-3 border-0">
@@ -152,7 +152,7 @@ if (!$surgery) die("Surgery not found");
         </div>
 
         <div class="col-lg-6">
-            <div class="card shadow-sm border-0 mb-3"><div class="card-body p-2"><canvas id="liveChart" height="250"></canvas></div></div>
+            <div class="card shadow-sm border-0 mb-3"><div class="card-header bg-white small fw-bold">SIMULATED VITAL-SIGN TRENDS</div><div class="card-body p-2"><canvas id="liveChart" height="250"></canvas></div></div>
             <div class="card shadow-sm border-0" style="height: 300px; overflow-y: auto;">
                 <div class="card-header bg-light small fw-bold">EVENT LOG</div>
                 <ul class="list-group list-group-flush small" id="timelineList"></ul>
@@ -294,10 +294,19 @@ if (!$surgery) die("Surgery not found");
         myChart = new Chart(ctx, {
             type: 'line',
             data: { labels: [], datasets: [
-                { label: 'HR', borderColor: '#28a745', data: [], tension: 0.2 },
-                { label: 'Sys BP', borderColor: '#dc3545', data: [], tension: 0.2 }
+                { label: 'Heart rate (bpm)', borderColor: '#28a745', yAxisID: 'hr', data: [], tension: 0.2, pointRadius: 1 },
+                { label: 'Systolic BP (mmHg)', borderColor: '#dc3545', yAxisID: 'bp', data: [], tension: 0.2, spanGaps: true, pointRadius: 4 }
             ]},
-            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { ticks: { maxTicksLimit: 8 } } } }
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: false,
+                scales: {
+                    x: { ticks: { maxTicksLimit: 8 } },
+                    hr: { type: 'linear', position: 'left', suggestedMin: 65, suggestedMax: 90,
+                          title: { display: true, text: 'bpm' } },
+                    bp: { type: 'linear', position: 'right', suggestedMin: 105, suggestedMax: 135,
+                          grid: { drawOnChartArea: false }, title: { display: true, text: 'mmHg' } }
+                }
+            }
         });
     }
 
@@ -316,7 +325,7 @@ if (!$surgery) die("Surgery not found");
                     // CORRECCIÓN GRÁFICO: Filtro para evitar ceros
                     const validVitals = data.chart_data.filter(d => d.card_freq !== null && parseInt(d.card_freq) > 0);
                     
-                    myChart.data.labels = validVitals.map(d => d.timestamp.split(' ')[1].substring(0,5));
+                    myChart.data.labels = validVitals.map(d => d.timestamp.split(' ')[1].substring(0,8));
                     myChart.data.datasets[0].data = validVitals.map(d => d.card_freq);
                     myChart.data.datasets[1].data = validVitals.map(d => d.sys);
                     myChart.update();

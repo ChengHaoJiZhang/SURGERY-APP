@@ -83,7 +83,7 @@ $rooms = $pdo->query("SELECT * FROM OPERATING_ROOM ORDER BY room_number")->fetch
     <div class="main-area">
         <div class="col-left">
             <h5 class="fw-bold text-dark mb-1"><i class="bi bi-hourglass-split me-2"></i> Waiting List</h5>
-            <p class="text-muted small mb-3"><?php echo count($waitingList); ?> surgeries pending allocation.</p>
+            <p class="text-muted small mb-3"><?php echo count($waitingList); ?> <?php echo count($waitingList) === 1 ? 'surgery' : 'surgeries'; ?> pending allocation.</p>
             
             <div class="pe-2 pb-5" style="overflow-y: auto; max-height: calc(100vh - 100px);">
                 <?php if(empty($waitingList)): ?>
@@ -98,7 +98,7 @@ $rooms = $pdo->query("SELECT * FROM OPERATING_ROOM ORDER BY room_number")->fetch
                             </div>
                             <div class="text-end">
                                 <span class="badge <?php echo $w['priority_level']=='Emergency'?'bg-danger':($w['priority_level']=='Urgent'?'bg-warning text-dark':'bg-primary'); ?>"><?php echo $w['priority_level']; ?></span>
-                                <div class="small text-muted mt-2 fw-bold"><i class="bi bi-clock"></i> <?php echo $w['default_duration']; ?>m</div>
+                                <div class="small text-muted mt-2 fw-bold"><i class="bi bi-clock"></i> <?php echo $w['default_duration']; ?>m slot</div>
                             </div>
                         </div>
                     </div>

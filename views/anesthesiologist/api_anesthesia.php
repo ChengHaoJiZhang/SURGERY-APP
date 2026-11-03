@@ -39,7 +39,7 @@ try {
     $userId = $_SESSION['user_id'];
     // Keep the original SQL dump usable until the local demo adds a dedicated SpO2 column.
     $oxygenColumn = $pdo->query("SHOW COLUMNS FROM SURGERY_MONITORING LIKE 'oxygen_saturation'")->fetch();
-    $spo2Column = $oxygenColumn ? 'oxygen_saturation' : 'tidal_CO2';
+    $spo2Column = $oxygenColumn ? 'oxygen_saturation' : 'NULL';
 
     // ================= GET =================
     if ($method === 'GET' || $action === 'get_data') {
@@ -47,10 +47,18 @@ try {
         $stmtVitals = $pdo->prepare("SELECT card_freq, sys, dias, $spo2Column AS oxygen_saturation, timestamp FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND (card_freq IS NOT NULL OR sys IS NOT NULL) ORDER BY timestamp DESC LIMIT 1");
         $stmtVitals->execute([$spid]);
         $latest = $stmtVitals->fetch(PDO::FETCH_ASSOC);
+        // NIBP is intermittent; keep its last measured value while HR/SpO2 refresh.
+        if ($latest && ($latest['sys'] === null || $latest['dias'] === null)) {
+            $stmtBp = $pdo->prepare("SELECT sys, dias FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND sys IS NOT NULL AND dias IS NOT NULL ORDER BY timestamp DESC, monitoring_id DESC LIMIT 1");
+            $stmtBp->execute([$spid]);
+            $bp = $stmtBp->fetch(PDO::FETCH_ASSOC);
+            $latest['sys'] = $bp['sys'] ?? null;
+            $latest['dias'] = $bp['dias'] ?? null;
+        }
         $vitalsResponse = $latest ?: ['card_freq'=>'--', 'sys'=>'--', 'dias'=>'--', 'oxygen_saturation'=>'--'];
 
         // Obtener datos para el gráfico
-        $stmtChart = $pdo->prepare("SELECT timestamp, card_freq, sys, dias, $spo2Column AS oxygen_saturation FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND timestamp > DATE_SUB(NOW(), INTERVAL 3 HOUR) ORDER BY timestamp DESC LIMIT 60");
+        $stmtChart = $pdo->prepare("SELECT timestamp, card_freq, sys, dias, $spo2Column AS oxygen_saturation FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND timestamp > DATE_SUB(NOW(), INTERVAL 3 HOUR) ORDER BY timestamp DESC LIMIT 180");
         $stmtChart->execute([$spid]);
 
         // Construir Timeline

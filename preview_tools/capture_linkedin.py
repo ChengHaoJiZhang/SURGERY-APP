@@ -1,6 +1,8 @@
 from pathlib import Path
 import argparse
+import os
 import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,9 +21,17 @@ BASE = "http://127.0.0.1:8000"
 OUTPUT = ROOT / args.output
 OUTPUT.mkdir(exist_ok=True)
 
+# Refresh the fictional nurse/scheduler/inventory examples before each capture.
+# The anesthesia stream is started separately by start_demo.ps1.
+fixture_env = os.environ.copy()
+fixture_env["SURGERY_PREVIEW_FIXTURES"] = "1"
+subprocess.run([str(RUNTIME / "php" / "php.exe"),
+                str(ROOT / "preview_tools" / "seed_screenshot_cases.php")],
+               cwd=ROOT, env=fixture_env, check=True)
+
 CASES = [
     ("02_surgeon_snomed_lookup.png", "Surgeon", "/views/surgeon/operative_report.php?id=173", "snomed"),
-    ("03_nurse_safety_cockpit.png", "Nurse", "/views/nurse/surgery_cockpit.php?spid=173", None),
+    ("03_nurse_safety_cockpit.png", "Nurse", "/views/nurse/surgery_cockpit.php?spid=900002", "nurse"),
     ("04_anesthesiologist_cockpit.png", "Anesthesiologist", "/views/anesthesiologist/live_cockpit.php?id=900001", "anesthesia"),
     ("05_patient_portal.png", "Patient", "/views/patient/patient_dashboard.php", None),
     ("06_patient_surgery_details.png", "Patient", "/views/patient/surgery_details.php?id=119", None),
@@ -79,11 +89,50 @@ with sync_playwright() as p:
                 raise RuntimeError("Synthetic anesthesia chart is not populated")
             if "SYNTHETIC DEMO" not in page.locator("body").inner_text():
                 raise RuntimeError("Anesthesia demo label is missing")
+            latest = data["latest_vitals"]
+            if not (72 <= int(latest["card_freq"]) <= 86 and
+                    97 <= int(latest["oxygen_saturation"]) <= 99 and
+                    112 <= int(latest["sys"]) <= 128 and
+                    70 <= int(latest["dias"]) <= 82):
+                raise RuntimeError("Anesthesia demo values are outside the documented scenario")
+            if "ECG" in page.locator("body").inner_text():
+                raise RuntimeError("Trend chart must not be presented as an ECG")
+        if action == "nurse":
+            page.wait_for_function("document.querySelector('#vitalsTableBody')?.innerText.includes('118/76')", timeout=5000)
+            milestones = page.locator(".timestamp-display").all_inner_texts()
+            if milestones[2:] != ["--:--", "--:--"]:
+                raise RuntimeError("Nurse demo is not an ongoing surgery")
+            if not all(page.locator(f"#{key}").is_checked() for key in ("chk_patient", "chk_anesthesia", "chk_timeout")):
+                raise RuntimeError("Pre-incision safety checks are incomplete in the nurse demo")
+            if page.locator("#chk_counts").is_checked():
+                raise RuntimeError("Sign-out checks should not be completed during an ongoing case")
         if action == "snomed":
             page.locator("#snomed_search").fill("osteo")
             page.wait_for_timeout(1200)
-            if page.locator(".snomed-item:visible").count() < 1:
-                raise RuntimeError("SNOMED demo lookup returned no visible results")
+            terms = page.locator(".snomed-item:visible").all_inner_texts()
+            if not any("Osteoarthritis of knee" in t and "239873007" in t for t in terms):
+                raise RuntimeError("SNOMED knee concept or code is incorrect")
+            if not any("Osteoarthritis of hip" in t and "239872002" in t for t in terms):
+                raise RuntimeError("SNOMED hip concept or code is incorrect")
+            if page.locator("#blood_loss").input_value() != "200":
+                raise RuntimeError("Operative report uses the old zero blood-loss example")
+        if filename == "05_patient_portal.png" and "COMPLETED" not in page.locator("body").inner_text():
+            raise RuntimeError("Historical patient case is not marked completed")
+        if filename == "06_patient_surgery_details.png":
+            details = page.locator("body").inner_text()
+            if "COMPLETED" not in details or "Consent Signed" not in details:
+                raise RuntimeError("Patient case status and consent are inconsistent")
+        if filename == "07_administrator_scheduler.png":
+            waiting = page.locator(".card-patient")
+            if waiting.count() != 1 or "Carpal Tunnel Release" not in waiting.first.inner_text():
+                raise RuntimeError("Fictional pending surgery is missing from the scheduler")
+        if filename == "08_director_inventory.png":
+            page.wait_for_function("document.querySelector('#val-consumed')?.textContent.trim() === '12'", timeout=5000)
+            inventory = page.evaluate("async () => (await fetch('api/inventory_data.php?period=month')).json()")
+            if inventory.get("usage_kpi", {}).get("total_consumed") != "12":
+                raise RuntimeError("Inventory usage total does not match the local fixture")
+            if int(inventory["kpi"]["low_stock"]) != 1 or int(inventory["kpi"]["expired"]) != 1:
+                raise RuntimeError("Inventory alerts are inconsistent with the local fixture")
         check_page(page, filename)
         page.screenshot(path=str(OUTPUT / filename), animations="disabled")
         print(filename, page.title())

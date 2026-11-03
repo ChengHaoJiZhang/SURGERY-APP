@@ -19,7 +19,7 @@ To ensure the repository remains consistent and easy to run, we have configured 
 * **`.gitattributes`**: Ensures that binary files and line endings (Windows vs. macOS/Linux) are handled correctly, preventing formatting errors across different operating systems.
 * **`.gitignore`**: Filters out unnecessary system files and local build artifacts to keep the repository clean.
 
-> **⚠️ Note on Credentials:** While standard practice is to hide configuration files, this project contains synthetic (dummy) database credentials and API keys for demonstration purposes. These are safe to view and are included to make the setup process easier.
+> **Demo credentials:** The local preview uses an isolated localhost database and dummy credentials. Do not reuse them. Older commits may contain exposed credentials; rotate any real keys before using them elsewhere.
 
 ---
 
@@ -65,13 +65,13 @@ This system is divided into specific portals for each role in the surgical proce
 
 ### Prerequisites
 * A local server environment (XAMPP, WAMP, or MAMP).
-* PHP 7.4 or higher.
+* PHP 8.4 for the reproducible Windows preview described below.
 * MySQL Database.
 
 ### Installation
 1.  **Clone the repo:**
     ```bash
-    git clone [https://github.com/your-username/surgery-app.git](https://github.com/your-username/surgery-app.git)
+    git clone https://github.com/ChengHaoJiZhang/SURGERY-APP.git
     ```
 2.  **Database Setup:**
     * Open your database management tool (e.g., phpMyAdmin).
@@ -107,3 +107,4 @@ SURGERY-APP/
 ## Local demo and screenshots
 
 For a reproducible Windows setup with mock data, a streaming anesthesiologist cockpit, six demo roles, and LinkedIn PNG capture, see [preview_tools/README.md](preview_tools/README.md). The anesthesia feed is synthetic and runs only against a localhost demo database.
+For any public clinical screenshot, follow the official-source and consistency checks in [AGENTS.md](AGENTS.md) and the preview guide before publishing.

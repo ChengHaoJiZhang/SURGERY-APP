@@ -208,7 +208,7 @@ $materials = [
                     const last = data.latest_vitals;
                     document.getElementById('disp_hr').innerText = last.card_freq || '--';
                     document.getElementById('disp_bp').innerText = (last.sys && last.dias) ? `${last.sys}/${last.dias}` : '--/--';
-                    document.getElementById('disp_spo2').innerText = last.tidal_CO2 || '--';
+                    document.getElementById('disp_spo2').innerText = last.oxygen_saturation ?? '--';
                 }
                 
                 // 2. GRÁFICO (Usando 'chart_data' del JSON)

@@ -225,7 +225,7 @@ if ($spid === 0) {
                 hr: document.getElementById('hr').value,
                 sys: document.getElementById('sys').value,
                 dias: document.getElementById('dias').value,
-                tidal_CO2: document.getElementById('spo2').value, 
+                oxygen_saturation: document.getElementById('spo2').value,
                 resp_freq: document.getElementById('rr').value,
                 observations: `Pre-Op Temp: ${document.getElementById('temp').value} °C` 
             };

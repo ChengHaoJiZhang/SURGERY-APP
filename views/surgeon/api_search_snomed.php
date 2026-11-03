@@ -41,8 +41,8 @@ $snomed_db = [
     ['id' => '302228003', 'term' => 'Adhesions of peritoneum'],
     
     // --- ORTHOPEDICS / TRAUMA ---
-    ['id' => '239872002', 'term' => 'Osteoarthritis of knee'],
-    ['id' => '266368001', 'term' => 'Osteoarthritis of hip'],
+    ['id' => '239873007', 'term' => 'Osteoarthritis of knee'],
+    ['id' => '239872002', 'term' => 'Osteoarthritis of hip'],
     ['id' => '30283000',  'term' => 'Rheumatoid arthritis'],
     ['id' => '5655000',   'term' => 'Fracture of femur'],
     ['id' => '46866001',  'term' => 'Fracture of lower leg'],

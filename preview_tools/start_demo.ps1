@@ -5,6 +5,7 @@ $phpExe = Join-Path $runtime 'php\php.exe'
 $dbExe = Join-Path $runtime 'mariadb\mariadb-11.8.9-winx64\bin\mariadbd.exe'
 $data = Join-Path $runtime 'data'
 $demoScript = Join-Path $PSScriptRoot 'demo_anesthesia.php'
+$screenshotFixture = Join-Path $PSScriptRoot 'seed_screenshot_cases.php'
 if (-not (Test-Path -LiteralPath $phpExe) -or -not (Test-Path -LiteralPath $dbExe) -or -not (Test-Path -LiteralPath $data)) {
     throw "Preview runtime missing: $runtime. Follow preview_tools/README.md to recreate it."
 }
@@ -35,6 +36,13 @@ $worker = Get-Demo-Worker
 if (-not $worker) {
     & $phpExe $demoScript seed
     if ($LASTEXITCODE -ne 0) { throw 'Could not seed the synthetic anesthesia case.' }
+    $env:SURGERY_PREVIEW_FIXTURES = '1'
+    try {
+        & $phpExe $screenshotFixture
+        if ($LASTEXITCODE -ne 0) { throw 'Could not seed the other synthetic screenshot cases.' }
+    } finally {
+        Remove-Item Env:\SURGERY_PREVIEW_FIXTURES -ErrorAction SilentlyContinue
+    }
 }
 if (-not (Assert-Preview-Port 8000 $phpExe)) {
     Start-Process -FilePath $phpExe -ArgumentList @('-S', '127.0.0.1:8000', '-t', '.') -WorkingDirectory $repo -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runtime 'php.stdout.log') -RedirectStandardError (Join-Path $runtime 'php.stderr.log')

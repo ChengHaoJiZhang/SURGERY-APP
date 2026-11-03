@@ -280,7 +280,7 @@ try {
         </div>
         
         <div class="mt-auto p-3 text-center text-muted bg-light border-top">
-            <small>&copy; 2025 Hospital Les Corts. All rights reserved.</small>
+            <small>&copy; <?php echo date('Y'); ?> Hospital Les Corts. All rights reserved.</small>
         </div>
     </div>
 </div>
