@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../controllers/LoginController.php';
 $controller = new LoginController();
 $controller->checkAuth();
 
-$spid = $_GET['id'] ?? 0;
+$spid = (int)($_GET['id'] ?? 0);
 $pdo = getDBConnection();
 
 // Asegurar codificación UTF-8 en la conexión si no está configurada por defecto
@@ -119,7 +119,7 @@ if (!$surgery) die("Surgery not found");
 
 <div class="bg-white border-bottom py-3 px-4 sticky-top shadow-sm d-flex justify-content-between align-items-center">
     <div>
-        <h5 class="mb-0 fw-bold"><?php echo htmlspecialchars($surgery['first_name'].' '.$surgery['surnames'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></h5>
+        <h5 class="mb-0 fw-bold"><?php echo htmlspecialchars($surgery['first_name'].' '.$surgery['surnames'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?><?php if (str_contains((string)$surgery['notes'], '[MOCK ANESTHESIA DEMO]')): ?> <span class="badge text-bg-info ms-2 align-middle">SYNTHETIC DEMO</span><?php endif; ?></h5>
         <small class="text-muted"><?php echo htmlspecialchars($surgery['procedure_name']); ?> | OR: <?php echo htmlspecialchars($surgery['room_number']); ?></small>
     </div>
     <div class="d-flex gap-2">
@@ -297,7 +297,7 @@ if (!$surgery) die("Surgery not found");
                 { label: 'HR', borderColor: '#28a745', data: [], tension: 0.2 },
                 { label: 'Sys BP', borderColor: '#dc3545', data: [], tension: 0.2 }
             ]},
-            options: { responsive: true, maintainAspectRatio: false, animation: false }
+            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { ticks: { maxTicksLimit: 8 } } } }
         });
     }
 
@@ -310,7 +310,7 @@ if (!$surgery) die("Surgery not found");
                 const last = data.latest_vitals;
                 document.getElementById('disp_hr').textContent = last.card_freq || '--';
                 document.getElementById('disp_bp').textContent = (last.sys && last.dias) ? `${last.sys}/${last.dias}` : '--/--';
-                document.getElementById('disp_spo2').textContent = last.tidal_CO2 || '--';
+                document.getElementById('disp_spo2').textContent = last.oxygen_saturation || '--';
 
                 if(data.chart_data) {
                     // CORRECCIÓN GRÁFICO: Filtro para evitar ceros

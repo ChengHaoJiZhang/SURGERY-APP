@@ -101,3 +101,9 @@ SURGERY-APP/
 │   └── surgeon/        # Surgeon tools
 ├── index.php           # Entry point
 └── login.php           # Authentication page
+
+---
+
+## Local demo and screenshots
+
+For a reproducible Windows setup with mock data, a streaming anesthesiologist cockpit, six demo roles, and LinkedIn PNG capture, see [preview_tools/README.md](preview_tools/README.md). The anesthesia feed is synthetic and runs only against a localhost demo database.

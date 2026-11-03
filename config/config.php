@@ -10,7 +10,7 @@
 // ===========================================
 
 // Configuración Local
-define('DB_HOST_LOCAL', '127.0.0.1:3308');
+define('DB_HOST_LOCAL', getenv('DB_HOST_LOCAL') ?: '127.0.0.1:3308');
 define('DB_SOCKET_LOCAL', '/tmp/mysql8.sock');
 
 // Configuración Remota  
@@ -18,9 +18,9 @@ define('DB_HOST_REMOTE', 'mysql.s816.sureserver.com');
 define('DB_PORT_REMOTE', '330'); // CAMBIO DE 3308 A 3306
 
 // Credenciales
-define('DB_USERNAME', 'grupduser');
-define('DB_PASSWORD', 'grupdadmin'); // Cambiar por la contraseña real jiba72490
-define('DB_NAME', 'imtm2025_grupd'); // CAMBIAR: era 'metales_flujo'
+define('DB_USERNAME', getenv('DB_USERNAME') ?: 'preview_user');
+define('DB_PASSWORD', getenv('DB_PASSWORD') ?: 'preview_local_only');
+define('DB_NAME', getenv('DB_NAME') ?: 'imtm2025_grupd'); // CAMBIAR: era 'metales_flujo'
 
 // Tipo de conexión: 'local' o 'remote'
 define('DB_TYPE', 'local'); // CAMBIO DE LOCAL A REMOTO
@@ -28,7 +28,7 @@ define('DB_TYPE', 'local'); // CAMBIO DE LOCAL A REMOTO
 // ===========================================
 // CONFIGURACIÓN OPENAI
 // ===========================================
-define('OPENAI_API_KEY', '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'); // Cambiar por API Key real
+define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: ''); // Disabled for local screenshot preview
 define('OPENAI_MODEL', 'gpt-3.5-turbo');
 define('OPENAI_MAX_TOKENS', 500);
 

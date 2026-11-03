@@ -37,17 +37,20 @@ try {
     if (!$spid) throw new Exception("Error: No SPID provided.");
     $pdo = getDBConnection();
     $userId = $_SESSION['user_id'];
+    // Keep the original SQL dump usable until the local demo adds a dedicated SpO2 column.
+    $oxygenColumn = $pdo->query("SHOW COLUMNS FROM SURGERY_MONITORING LIKE 'oxygen_saturation'")->fetch();
+    $spo2Column = $oxygenColumn ? 'oxygen_saturation' : 'tidal_CO2';
 
     // ================= GET =================
     if ($method === 'GET' || $action === 'get_data') {
         // Obtener últimos signos vitales
-        $stmtVitals = $pdo->prepare("SELECT card_freq, sys, dias, tidal_CO2, timestamp FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND (card_freq IS NOT NULL OR sys IS NOT NULL) ORDER BY timestamp DESC LIMIT 1");
+        $stmtVitals = $pdo->prepare("SELECT card_freq, sys, dias, $spo2Column AS oxygen_saturation, timestamp FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND (card_freq IS NOT NULL OR sys IS NOT NULL) ORDER BY timestamp DESC LIMIT 1");
         $stmtVitals->execute([$spid]);
         $latest = $stmtVitals->fetch(PDO::FETCH_ASSOC);
-        $vitalsResponse = $latest ?: ['card_freq'=>'--', 'sys'=>'--', 'dias'=>'--', 'tidal_CO2'=>'--'];
+        $vitalsResponse = $latest ?: ['card_freq'=>'--', 'sys'=>'--', 'dias'=>'--', 'oxygen_saturation'=>'--'];
 
         // Obtener datos para el gráfico
-        $stmtChart = $pdo->prepare("SELECT timestamp, card_freq, sys, dias, tidal_CO2 FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND timestamp > DATE_SUB(NOW(), INTERVAL 3 HOUR) ORDER BY timestamp ASC");
+        $stmtChart = $pdo->prepare("SELECT timestamp, card_freq, sys, dias, $spo2Column AS oxygen_saturation FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND timestamp > DATE_SUB(NOW(), INTERVAL 3 HOUR) ORDER BY timestamp DESC LIMIT 60");
         $stmtChart->execute([$spid]);
 
         // Construir Timeline
@@ -56,13 +59,13 @@ try {
         $stmtMeds->execute([$spid]);
         $timeline = array_merge($timeline, $stmtMeds->fetchAll(PDO::FETCH_ASSOC));
 
-        $stmtObs = $pdo->prepare("SELECT timestamp, CASE WHEN observations LIKE '%[POC]%' THEN 'Gases / POC' WHEN observations LIKE '%[EVENT]%' THEN 'Event' WHEN observations LIKE '%TIME IN%' THEN 'Start' WHEN observations LIKE '%TIME OUT%' THEN 'End' ELSE 'Note' END as title, observations as details, 'event' as type FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND observations IS NOT NULL AND observations != 'Auto-Monitor' AND observations != 'Manual Entry' AND observations != ''");
+        $stmtObs = $pdo->prepare("SELECT timestamp, CASE WHEN observations LIKE '%[POC]%' THEN 'Gases / POC' WHEN observations LIKE '%[EVENT]%' THEN 'Event' WHEN observations LIKE '%TIME IN%' THEN 'Start' WHEN observations LIKE '%TIME OUT%' THEN 'End' ELSE 'Note' END as title, observations as details, 'event' as type FROM SURGERY_MONITORING WHERE surgical_procedure_id = ? AND observations IS NOT NULL AND observations != 'Auto-Monitor' AND observations != 'Manual Entry' AND observations != 'Demo stream' AND observations != ''");
         $stmtObs->execute([$spid]);
         $timeline = array_merge($timeline, $stmtObs->fetchAll(PDO::FETCH_ASSOC));
 
         usort($timeline, function($a, $b) { return strtotime($b['timestamp']) - strtotime($a['timestamp']); });
 
-        echo json_encode(['success' => true, 'latest_vitals' => $vitalsResponse, 'chart_data' => $stmtChart->fetchAll(PDO::FETCH_ASSOC), 'timeline' => $timeline]);
+        echo json_encode(['success' => true, 'latest_vitals' => $vitalsResponse, 'chart_data' => array_reverse($stmtChart->fetchAll(PDO::FETCH_ASSOC)), 'timeline' => $timeline]);
         exit;
     }
 
@@ -129,7 +132,7 @@ try {
         // --- 3. GUARDAR SIGNOS VITALES MANUALES ---
         elseif ($action === 'save_vitals') {
             // CORRECCIÓN: Nombre de tabla SURGERY_MONITORING (antes estaba mal como SURGICAL_MONITORING)
-            $pdo->prepare("INSERT INTO SURGERY_MONITORING (surgical_procedure_id, card_freq, sys, dias, tidal_CO2, timestamp, observations) VALUES (?, ?, ?, ?, ?, NOW(), 'Manual Entry')")->execute([$spid, $jsonInput['hr'], $jsonInput['sys'], $jsonInput['dias'], $jsonInput['spo2']]);
+            $pdo->prepare("INSERT INTO SURGERY_MONITORING (surgical_procedure_id, card_freq, sys, dias, $spo2Column, timestamp, observations) VALUES (?, ?, ?, ?, ?, NOW(), 'Manual Entry')")->execute([$spid, $jsonInput['hr'], $jsonInput['sys'], $jsonInput['dias'], $jsonInput['spo2']]);
             echo json_encode(['success' => true]);
         }
         
