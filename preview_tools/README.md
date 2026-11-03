@@ -14,6 +14,7 @@ This directory reproduces SURGERY-APP locally with the repository's 2025 demo SQ
     │       ├── import_demo_db.py
     │       ├── demo_anesthesia.php
     │       ├── seed_screenshot_cases.php
+    │       ├── validate_screenshot_cases.php
     │       ├── start_demo.ps1
     │       ├── stop_demo.ps1
     │       └── capture_linkedin.py
@@ -69,7 +70,7 @@ Install Playwright into the sibling runtime, then start the app:
     python -m pip install --target (Join-Path $runtime 'python-packages') playwright==1.56.0
     .\preview_tools\start_demo.ps1
 
-The startup script starts MariaDB and PHP if needed, seeds 21 recent synthetic HR/SpO2 samples, intermittent BP readings, and two log entries. It then runs `seed_screenshot_cases.php` against the isolated local database: the nurse case shows a knee replacement in progress, the scheduler gets a fictional pending case, the surgeon's imported demo case (173) gets a coherent operative timeline, and current-month material usage and stock dates are made consistent. A worker adds HR/SpO2 samples every three seconds and a new NIBP reading approximately every five minutes. Calling the startup script again while the worker runs does not reset the cases. After stopping the demo, starting again resets the synthetic fixtures. The original SQL dump is never edited.
+The startup script starts MariaDB and PHP if needed, seeds 21 recent synthetic HR/SpO2 samples, intermittent BP readings, and two log entries. It then runs `seed_screenshot_cases.php` against the isolated local database: the nurse case shows a knee replacement in progress, the scheduler gets a fictional pending case, the surgeon's imported demo case (173) gets a coherent operative timeline and a medication report consistent with its log, and the completed patient example gets a prior-day consent date. Current-month material usage and stock dates are made consistent. A worker adds HR/SpO2 samples every three seconds and a new NIBP reading approximately every five minutes. Calling the startup script again while the worker runs does not reset the cases. After stopping the demo, starting again resets the synthetic fixtures. The original SQL dump is never edited.
 
 ## Live anesthesiologist demonstration
 
@@ -90,7 +91,7 @@ The demo setup adds an `oxygen_saturation` column to `SURGERY_MONITORING`. The o
 
 Before publishing or changing **any** screenshot, check each visible clinical value and code against an authoritative source suited to that field. Check the full story as well: patient and procedure match; consent and safety checks precede incision; room entry precedes incision, closure and exit; procedure duration is credible; medication times fall in the correct phase; units and measurement frequencies are right; stock, expiry alerts and usage totals agree; and dates and statuses do not contradict one another. Inspect the rendered PNG after capture. Do not substitute values from a real hospital patient. If a number has no defensible basis, omit it or label it illustrative; never imply that these fixtures are clinically validated.
 
-The current examples were checked against the [WHO Surgical Safety Checklist phases](https://www.who.int/news/item/24-06-2008-new-checklist-to-help-make-surgery-safer), [NHS knee-replacement duration and procedure overview](https://www.nhs.uk/tests-and-treatments/knee-replacement/how-its-done/), [MedlinePlus adult vital-sign ranges](https://medlineplus.gov/ency/article/002341.htm), [FDA pulse-oximetry basics](https://www.fda.gov/consumers/consumer-updates/pulse-oximeter-basics), and [HL7's SNOMED CT knee/hip concept list](https://www.hl7.org/fhir/uv/ips/STU1.1/ValueSet-problems-snomed-ct-ips-free-set.html). These references support plausibility and terminology, not diagnosis, drug dosing, or patient-specific clinical decisions.
+The current examples were checked against the [WHO Surgical Safety Checklist phases](https://www.who.int/docs/default-source/patient-safety/9789241598590-eng-checklist.pdf), [NHS knee-replacement duration and procedure overview](https://www.nhs.uk/tests-and-treatments/knee-replacement/how-its-done/), [MedlinePlus adult vital-sign ranges](https://medlineplus.gov/ency/article/002341.htm), [FDA pulse-oximetry basics](https://www.fda.gov/consumers/consumer-updates/pulse-oximeter-basics), [Canadian Anesthesiologists' Society monitoring guidance](https://www.cas.ca/CASAssets/Documents/Practice-Resources/Guidelines/CAS_Guidelines_Anesthesia_2026.pdf), and [HL7's SNOMED CT knee/hip concept list](https://www.hl7.org/fhir/uv/ips/STU1.1/ValueSet-problems-snomed-ct-ips-free-set.html). These references support plausibility and terminology, not diagnosis, drug dosing, or patient-specific clinical decisions.
 
 The scheduler's fictional carpal-tunnel case shows a **45-minute room slot**, including preparation and turnover in this demo; it is not a claim that the operation itself lasts 45 minutes. The [NHS describes the operation itself as around 20 minutes](https://www.nhs.uk/conditions/carpal-tunnel-syndrome/).
 
@@ -99,10 +100,11 @@ The medication entries shown in the nurse case are fictional entries adapted fro
 ## Screenshot capture
 
     python .\preview_tools\capture_linkedin.py
-    python .\preview_tools\capture_linkedin.py --scale 3 --output linkedin_screenshots_3x
+    python .\preview_tools\capture_linkedin.py --scale 1.5 --output linkedin_screenshots_small
 
-The first command saves 2400 x 1500 PNGs in linkedin_screenshots. The second renders 4800 x 3000 PNGs in a separate folder. Rendering again at higher pixel density creates more detail than enlarging an existing PNG.
-The capture script refreshes the fictional nurse, scheduler, and inventory fixtures immediately before rendering. For a fresh anesthesia timeline, stop and restart the demo before the capture command.
+The first command saves reviewed 4800 x 3000 PNGs in linkedin_screenshots. The second renders smaller 2400 x 1500 PNGs in a separate folder. Rendering at higher pixel density creates more detail than enlarging an existing PNG.
+The capture script refreshes the fictional nurse, scheduler, and inventory fixtures immediately before rendering, then runs `validate_screenshot_cases.php`. Capture stops if the synthetic case fails checks for patient/procedure links, operative milestones and duration, checklist phase, medication timing, intermittent blood-pressure history, consent preceding the operation day, future scheduling, or inventory use. The browser checks visible codes, vital ranges, statuses, and inventory alerts before saving each image. These checks enforce the documented example's internal consistency; they do not establish clinical validity or guarantee that every untested field is realistic. Inspect every PNG before publishing. For a fresh anesthesia timeline, stop and restart the demo before the capture command.
+For the anesthesia PNG only, the capture script shows NIBP as separate points because the underlying readings are intermittent; it leaves the application source unchanged. Restart immediately before capture to avoid a gap between the 20-minute seeded history and the live stream.
 
 | PNG | View |
 | --- | --- |

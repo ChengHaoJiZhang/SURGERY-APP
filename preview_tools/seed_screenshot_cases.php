@@ -41,6 +41,7 @@ try {
         time_extubation = '2025-12-11 12:25:00', time_out_room = '2025-12-11 12:35:00',
         safety_checklist_data = '{\"patient\":true,\"anesthesia\":true,\"timeout\":true,\"counts\":true,\"specimen\":true}',
         blood_loss_ml = 200, post_op_diagnosis = 'Osteoarthritis of knee',
+        anesthesiology_report = 'Synthetic demonstration: general anesthesia with a regional nerve block. Medication administration is recorded in the procedure medication log. No patient-specific dosing guidance is implied.',
         surgical_report = 'FINDINGS: Degenerative changes of the knee joint.\\n\\nTECHNIQUE: Femoral and tibial surfaces prepared; trial components assessed for alignment and stability; definitive components implanted.\\n\\nSPECIMENS: None.\\n\\nESTIMATED BLOOD LOSS: 200 mL.\\n\\nCOMPLICATIONS: None documented.',
         post_op_instructions = 'Routine postoperative monitoring, wound review and mobilisation per treating team.'
         WHERE surgical_procedure_id = 173");
@@ -51,6 +52,12 @@ try {
     // The imported demonstration rows used tidal_CO2 to hold pulse oximetry.
     $pdo->exec("UPDATE SURGERY_MONITORING SET oxygen_saturation = ROUND(tidal_CO2), tidal_CO2 = NULL
         WHERE surgical_procedure_id = 173 AND oxygen_saturation IS NULL AND tidal_CO2 BETWEEN 90 AND 100");
+
+    // The imported consent stores only a date, so set it to the preceding day
+    // for the public demo rather than imply an unknown same-day signing time.
+    $pdo->exec("UPDATE PATIENT_CONSENTS SET consent_date = '2025-11-30'
+        WHERE patient_id = 'LGP_0001' AND episode_id = 118 AND procedure_id = 1
+          AND signed = 1 AND deleted_at IS NULL");
 
     $pdo->exec("INSERT IGNORE INTO SURGICAL_PROCEDURE
         (surgical_procedure_id, procedure_id, episode_id, date_time, status, notes,

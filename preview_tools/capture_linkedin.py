@@ -12,7 +12,7 @@ sys.path.insert(0, str(RUNTIME / "python-packages"))
 from playwright.sync_api import sync_playwright
 
 parser = argparse.ArgumentParser(description="Capture the six demo roles for LinkedIn.")
-parser.add_argument("--scale", type=float, default=1.5, help="Pixel scale; 3 gives 4800x3000 PNGs.")
+parser.add_argument("--scale", type=float, default=3, help="Pixel scale; default 3 gives 4800x3000 PNGs.")
 parser.add_argument("--output", default="linkedin_screenshots", help="Output folder inside the clone.")
 args = parser.parse_args()
 if not 1 <= args.scale <= 4:
@@ -27,6 +27,9 @@ fixture_env = os.environ.copy()
 fixture_env["SURGERY_PREVIEW_FIXTURES"] = "1"
 subprocess.run([str(RUNTIME / "php" / "php.exe"),
                 str(ROOT / "preview_tools" / "seed_screenshot_cases.php")],
+               cwd=ROOT, env=fixture_env, check=True)
+subprocess.run([str(RUNTIME / "php" / "php.exe"),
+                str(ROOT / "preview_tools" / "validate_screenshot_cases.php")],
                cwd=ROOT, env=fixture_env, check=True)
 
 CASES = [
@@ -84,6 +87,8 @@ with sync_playwright() as p:
         page.wait_for_timeout(1200)
         if action == "anesthesia":
             page.wait_for_function("document.querySelector('#disp_hr')?.textContent.trim() !== '--'", timeout=5000)
+            # NIBP is sampled intermittently; joining its dots suggests continuous measurement.
+            page.evaluate("myChart.data.datasets[1].showLine = false; myChart.update()")
             data = page.evaluate("""async () => (await fetch('/views/anesthesiologist/api_anesthesia.php?spid=900001&action=get_data')).json()""")
             if not data.get("success") or len(data.get("chart_data", [])) < 10:
                 raise RuntimeError("Synthetic anesthesia chart is not populated")
